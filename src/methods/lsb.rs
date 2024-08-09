@@ -1,12 +1,12 @@
-use std::{collections::HashSet, io, path::PathBuf, process::exit};
+use std::{collections::HashSet, path::PathBuf};
 use rand::{rngs::StdRng, Rng, SeedableRng};
+use crate::errors::AppError;
 
 use crate::methods::data::hash_key;
 
 
-pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], key: Option<&String>, verbose: bool) -> io::Result<()> {
-    let img = image::open(image_path)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Failed to open image: {}", e)))?;
+pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], key: Option<&String>, verbose: bool) -> Result<(), AppError> {
+    let img = image::open(image_path)?;
 
     let mut img = img.to_rgba8();
     
@@ -16,10 +16,7 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], ke
 
     let message_len = secret_data.len() as u32;
 
-    if message_len * 8 > (width * height) * 3 {
-        eprintln!("Data is too long and cannot fit into the image");
-        exit(-1);
-    };
+    if message_len * 8 > (imgsize * 3) {return Err(AppError::DataOverflow)};
 
     let len_bytes = message_len.to_be_bytes();
     let mut data = Vec::with_capacity(len_bytes.len() + secret_data.len());
@@ -57,8 +54,7 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], ke
         }
     }
 
-    img.save(output_path)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Failed to save image: {}", e)))?;
+    img.save(output_path)?;
 
     if verbose {println!("Image saved");}
 
@@ -66,9 +62,8 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], ke
 }
 
 
-pub fn extract(image_path: &PathBuf, key: Option<&String>, verbose: bool) -> io::Result<Vec::<u8>> {
-    let img = image::open(image_path)
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Failed to open image: {}", e)))?;
+pub fn extract(image_path: &PathBuf, key: Option<&String>, verbose: bool) -> Result<Vec::<u8>, AppError> {
+    let img = image::open(image_path)?;
     let img = img.to_rgba8();
 
 

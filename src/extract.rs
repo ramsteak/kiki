@@ -1,22 +1,16 @@
-use std::{fs::OpenOptions, io::{self, Write}, path::PathBuf, process::exit};
+use std::{fs::OpenOptions, io::Write, path::PathBuf};
 use crate::methods::lsb;
+use crate::errors::AppError;
 
-
-pub fn extract(image_path: &PathBuf, output_path: Option<&PathBuf>, method:Option<&String>, key: Option<&String>, verbose: bool) -> io::Result<()>{
+pub fn extract(image_path: &PathBuf, output_path: Option<&PathBuf>, method:Option<&String>, key: Option<&String>, verbose: bool) -> Result<(), AppError>{
     let method = match method {
         Some(method) => method,
-        None => {
-            eprintln!("As of now, method detection is not supported");
-            exit(-2);
-        }
+        None => {return Err(AppError::NotImplemented)}
     };
 
     let res = match method.as_str() {
         "LSB" => lsb::extract(image_path, key, verbose),
-        _ => {
-            eprintln!("Unsupported method: {}", method);
-            exit(-1);
-        }
+        _ => {return Err(AppError::UnsupportedMethod)}
     };
 
     match res {

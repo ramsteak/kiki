@@ -9,6 +9,7 @@ use std::process::exit;
 mod embed;
 mod extract;
 mod methods;
+mod errors;
 
 fn main() {
     let cmd = Command::new("kiki")
