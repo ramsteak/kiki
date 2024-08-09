@@ -66,10 +66,7 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], ke
 }
 
 
-pub fn extract(image_path: &PathBuf, output_path: Option<&PathBuf>, key: Option<&String>, verbose: bool) -> io::Result<()> {
-    println!("{}", image_path.to_string_lossy());
-    println!("{:?}", output_path);
-    
+pub fn extract(image_path: &PathBuf, key: Option<&String>, verbose: bool) -> io::Result<Vec::<u8>> {
     let img = image::open(image_path)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Failed to open image: {}", e)))?;
     let img = img.to_rgba8();
@@ -117,19 +114,8 @@ pub fn extract(image_path: &PathBuf, output_path: Option<&PathBuf>, key: Option<
         }
     }
     
-    println!("Message length: {}", message_len);
-    println!("{:?}", secret);
+    if verbose {println!("Message length: {}", message_len)};
 
-    match output_path {
-        Some(path) => {
-            let string = String::from_utf8(secret).expect("Error in decoding message");
-            println!("{}\n{}", path.to_string_lossy(), string);
-        },
-        None => {
-            let string = String::from_utf8(secret).expect("Error in decoding message");
-            println!("{}", string);
-        },
-    }
+    Ok(secret)
 
-    Ok(())
 }

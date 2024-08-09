@@ -43,7 +43,7 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], me
             exit(-1);
         }
     };
-    println!("Determined method: {}", method);
+    if verbose {println!("Determined method: {}", method)};
 
     match method.as_str() {
         "LSB" => lsb::embed(image_path, output_path, secret_data, key, verbose),
