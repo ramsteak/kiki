@@ -70,7 +70,8 @@ Methods list:
                     .expect("Failed to read secret from file"),
             };
 
-            let options = sub.get_many::<String>("options")
+            let options = sub
+                .get_many::<String>("options")
                 .map(|v| v.collect::<Vec<_>>())
                 .unwrap_or_default();
 
@@ -105,7 +106,8 @@ Methods list:
 
             let verbose = sub.get_flag("verbose");
 
-            let options = sub.get_many::<String>("options")
+            let options = sub
+                .get_many::<String>("options")
                 .map(|v| v.collect::<Vec<_>>())
                 .unwrap_or_default();
 

@@ -16,6 +16,7 @@ pub enum AppError {
     UnsupportedMethod,
     NotImplemented,
     CRCMismatch,
+    UserStopped,
 }
 
 impl fmt::Display for AppError {

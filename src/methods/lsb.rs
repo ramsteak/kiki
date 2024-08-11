@@ -90,6 +90,18 @@ pub fn extract(
         println!("Detected message length: {}", message_len)
     };
 
+    if message_len >= 1048576 {
+        println!("The detected message length is {:.1} MB. Do you want to continue? (y/n)", (message_len as f32) / 1048576.0);
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        let line = line.trim().to_lowercase();
+        match line.chars().nth(0) {
+            Some('y') => Ok(()),
+            Some(_) => Err(AppError::UserStopped),
+            None => Err(AppError::UserStopped)
+        }?;
+    }
+
     let mut secret = Vec::<u8>::with_capacity(message_len);
 
     while secret.len() < message_len {
