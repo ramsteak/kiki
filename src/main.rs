@@ -7,9 +7,9 @@ use std::path::PathBuf;
 use std::process::exit;
 
 mod embed;
+mod errors;
 mod extract;
 mod methods;
-mod errors;
 
 fn main() {
     let cmd = Command::new("kiki")
@@ -87,8 +87,9 @@ Methods list:
         }
         Some(("extract", sub)) => {
             let image = PathBuf::from(sub.get_one::<String>("image").unwrap());
-            
-            let output = sub.get_one::<String>("output")
+
+            let output = sub
+                .get_one::<String>("output")
                 .filter(|&s| s != "-")
                 .map(|s| PathBuf::from(s));
 
