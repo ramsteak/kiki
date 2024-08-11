@@ -25,8 +25,9 @@ fn main() {
                     .help("Path to the file containing the secret. If unspecified or \"-\", read from stdin."))
             .arg(Arg::new("method").short('m').long("method"))
             .arg(Arg::new("key").short('k').long("key"))
-            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue)
-        ))
+            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue))
+            .arg(Arg::new("options").short('o').long("options").num_args(1..))
+        )
         .subcommand(Command::new("extract")
             .arg(Arg::new("image").required(true).index(1)
                 .help("The path to the image to extract data from."))
@@ -34,8 +35,9 @@ fn main() {
                 .help("The file path to write the data to. If unspecified or \"-\", write to stdout."))
             .arg(Arg::new("method").short('m').long("method"))
             .arg(Arg::new("key").short('k').long("key"))
-            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue)
-        ))
+            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue))
+            .arg(Arg::new("options").short('o').long("options").num_args(1..))
+        )
         .after_help("\
 Methods list:
     - LSB      Least significant bit. (lossless only)
@@ -68,6 +70,10 @@ Methods list:
                     .expect("Failed to read secret from file"),
             };
 
+            let options = sub.get_many::<String>("options")
+                .map(|v| v.collect::<Vec<_>>())
+                .unwrap_or_default();
+
             if verbose {
                 println!("Kiki embed");
                 println!("Image:        {}", image.to_str().unwrap());
@@ -81,9 +87,10 @@ Methods list:
                     Some(key) => println!("Key:          {}", key),
                     None => println!("Key not specified"),
                 }
+                println!("Options:      {:?}", options);
             }
 
-            embed(&image, &output, &secret, method, key, verbose).expect("Error");
+            embed(&image, &output, &secret, method, key, verbose, options).expect("Error");
         }
         Some(("extract", sub)) => {
             let image = PathBuf::from(sub.get_one::<String>("image").unwrap());
@@ -97,6 +104,10 @@ Methods list:
             let key = sub.get_one::<String>("key");
 
             let verbose = sub.get_flag("verbose");
+
+            let options = sub.get_many::<String>("options")
+                .map(|v| v.collect::<Vec<_>>())
+                .unwrap_or_default();
 
             if verbose {
                 println!("Kiki extract");
@@ -113,9 +124,10 @@ Methods list:
                     Some(key) => println!("Key:          {}", key),
                     None => println!("Key not specified"),
                 }
+                println!("Options:      {:?}", options);
             }
             let output_ref = output.as_ref();
-            extract(&image, output_ref, method, key, verbose).expect("Error");
+            extract(&image, output_ref, method, key, verbose, options).expect("Error");
         }
         _ => {
             eprintln!("No subcommand used. Specify either 'embed' or 'extract'.");

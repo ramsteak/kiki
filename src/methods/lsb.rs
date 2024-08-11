@@ -2,9 +2,7 @@ use crate::errors::AppError;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::methods::data::{hash_key, package_data};
-
-use super::data;
+use crate::methods::data::{hash_key, package_data, BitIterator, BatchIterator};
 
 pub fn embed(
     image_path: &PathBuf,
@@ -12,6 +10,7 @@ pub fn embed(
     secret_data: &[u8],
     key: Option<&String>,
     verbose: bool,
+    options: Vec<&String>,
 ) -> Result<(), AppError> {
     let mut img = image::open(image_path)?.to_rgba8();
 
@@ -28,8 +27,8 @@ pub fn embed(
     };
 
     let data = package_data(secret_data);
-    let secret_bits = data::BitIterator::new(&data);
-    let bit_triplet = data::BatchIterator::new(secret_bits, 3);
+    let secret_bits = BitIterator::new(&data);
+    let bit_triplet = BatchIterator::new(secret_bits, 3);
 
     let mut rng = StdRng::seed_from_u64(hash_key(key));
     let mut used_pixels = HashSet::new();
@@ -63,6 +62,7 @@ pub fn extract(
     image_path: &PathBuf,
     key: Option<&String>,
     verbose: bool,
+    options: Vec<&String>,
 ) -> Result<Vec<u8>, AppError> {
     let img = image::open(image_path)?;
     let img = img.to_rgba8();

@@ -19,6 +19,7 @@ pub fn embed(
     method: Option<&String>,
     key: Option<&String>,
     verbose: bool,
+    options: Vec<&String>,
 ) -> Result<(), AppError> {
     let method = match output_path.extension().and_then(|e| e.to_str()) {
         Some(extension) => {
@@ -49,7 +50,7 @@ pub fn embed(
     };
 
     match method.as_str() {
-        "LSB" => lsb::embed(image_path, output_path, secret_data, key, verbose),
+        "LSB" => lsb::embed(image_path, output_path, secret_data, key, verbose, options),
         _ => Err(AppError::UnsupportedMethod),
     }
 }

@@ -8,6 +8,7 @@ pub fn extract(
     method: Option<&String>,
     key: Option<&String>,
     verbose: bool,
+    options: Vec<&String>,
 ) -> Result<(), AppError> {
     let method = match method {
         Some(method) => method,
@@ -15,7 +16,7 @@ pub fn extract(
     };
 
     let res = match method.as_str() {
-        "LSB" => lsb::extract(image_path, key, verbose),
+        "LSB" => lsb::extract(image_path, key, verbose, options),
         _ => return Err(AppError::UnsupportedMethod),
     };
 
