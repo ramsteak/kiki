@@ -2,7 +2,9 @@ use std::{collections::HashSet, path::PathBuf};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use crate::errors::AppError;
 
-use crate::methods::data::hash_key;
+use crate::methods::data::{hash_key,package_data};
+
+use super::data;
 
 
 pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], key: Option<&String>, verbose: bool) -> Result<(), AppError> {
@@ -18,14 +20,9 @@ pub fn embed(image_path: &PathBuf, output_path: &PathBuf, secret_data: &[u8], ke
 
     if message_len * 8 > (imgsize * 3) {return Err(AppError::DataOverflow)};
 
-    let len_bytes = message_len.to_be_bytes();
-    let mut data = Vec::with_capacity(len_bytes.len() + secret_data.len());
-    data.extend_from_slice(&len_bytes);
-    data.extend_from_slice(secret_data);
+    let data = package_data(secret_data);
+    let mut secret_bits = data::BitIterator::new(&data);
 
-
-    let mut secret_bits = data.iter()
-        .flat_map(|&byte| {(0..8).rev().map(move |bitpos| (byte>>bitpos) &1)});
     let mut get_next_trip = || -> Option<(u8,u8,u8)> {
         let r = secret_bits.next()?;
         let g = secret_bits.next().unwrap_or(0);
