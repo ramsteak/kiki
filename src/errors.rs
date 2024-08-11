@@ -15,6 +15,7 @@ pub enum AppError {
     DataOverflow,
     UnsupportedMethod,
     NotImplemented,
+    CRCMismatch,
 }
 
 impl fmt::Display for AppError {

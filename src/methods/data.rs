@@ -103,3 +103,27 @@ where
         // }
     }
 }
+
+pub trait FromBits {
+    fn from_bits(bits: &[u8]) -> Self;
+}
+impl FromBits for u32 {
+    fn from_bits(bits: &[u8]) -> Self {
+        bits.iter()
+            .take(32)
+            .rev()
+            .enumerate()
+            .map(|(i, b)| (*b as u32) << i)
+            .sum()
+    }
+}
+impl FromBits for u8 {
+    fn from_bits(bits: &[u8]) -> Self {
+        bits.iter()
+            .take(8)
+            .rev()
+            .enumerate()
+            .map(|(i, b)| (*b as u8) << i)
+            .sum()
+    }
+}
