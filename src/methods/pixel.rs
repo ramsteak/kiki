@@ -72,8 +72,8 @@ pub enum PixelIterator {
     Random(RandomPixelIterator),
 }
 
-impl Iterator for  PixelIterator {
-    type Item = (u32,u32);
+impl Iterator for PixelIterator {
+    type Item = (u32, u32);
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {

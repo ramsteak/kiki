@@ -34,9 +34,8 @@ pub fn embed(
     let secret_bits = BitIterator::new(&data);
     let bit_triplet = BatchIterator::new(secret_bits, 3);
 
-    
     let iterpix = if options.contains(&&"SEQ".to_string()) {
-        PixelIterator::Sequential(SequentialPixelIterator::new((width,height)))
+        PixelIterator::Sequential(SequentialPixelIterator::new((width, height)))
     } else {
         let rng = StdRng::seed_from_u64(hash_key(key));
         PixelIterator::Random(RandomPixelIterator::new((width, height), rng))
@@ -73,7 +72,7 @@ pub fn extract(
     }
 
     let mut iterpix = if options.contains(&&"SEQ".to_string()) {
-        PixelIterator::Sequential(SequentialPixelIterator::new((width,height)))
+        PixelIterator::Sequential(SequentialPixelIterator::new((width, height)))
     } else {
         let rng = StdRng::seed_from_u64(hash_key(key));
         PixelIterator::Random(RandomPixelIterator::new((width, height), rng))
@@ -91,14 +90,17 @@ pub fn extract(
     };
 
     if message_len >= 1048576 {
-        println!("The detected message length is {:.1} MB. Do you want to continue? (y/n)", (message_len as f32) / 1048576.0);
+        println!(
+            "The detected message length is {:.1} MB. Do you want to continue? (y/n)",
+            (message_len as f32) / 1048576.0
+        );
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
         let line = line.trim().to_lowercase();
         match line.chars().nth(0) {
             Some('y') => Ok(()),
             Some(_) => Err(AppError::UserStopped),
-            None => Err(AppError::UserStopped)
+            None => Err(AppError::UserStopped),
         }?;
     }
 
