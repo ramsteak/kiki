@@ -1,10 +1,10 @@
-use std::{fmt, io};
 use image;
+use std::{fmt, io};
 
 #[derive(Debug)]
 pub enum ExtensionError {
     UnsupportedExtension,
-    MissingExtension
+    MissingExtension,
 }
 
 #[derive(Debug)]
@@ -13,7 +13,6 @@ pub enum AppError {
     Image(image::ImageError),
     Extension(ExtensionError),
     DataOverflow,
-    DecodeError,
     UnsupportedMethod,
     NotImplemented,
 }
