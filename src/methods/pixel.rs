@@ -66,3 +66,19 @@ impl Iterator for SequentialPixelIterator {
         }
     }
 }
+
+pub enum PixelIterator {
+    Sequential(SequentialPixelIterator),
+    Random(RandomPixelIterator),
+}
+
+impl Iterator for  PixelIterator {
+    type Item = (u32,u32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            PixelIterator::Sequential(iter) => iter.next(),
+            PixelIterator::Random(iter) => iter.next(),
+        }
+    }
+}

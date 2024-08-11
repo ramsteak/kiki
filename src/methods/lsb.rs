@@ -6,6 +6,8 @@ use crate::methods::data::FromBits;
 use crate::methods::data::{hash_key, package_data, BatchIterator, BitIterator};
 use crate::methods::pixel;
 
+use super::pixel::{PixelIterator, RandomPixelIterator, SequentialPixelIterator};
+
 pub fn embed(
     image_path: &PathBuf,
     output_path: &PathBuf,
@@ -32,9 +34,14 @@ pub fn embed(
     let secret_bits = BitIterator::new(&data);
     let bit_triplet = BatchIterator::new(secret_bits, 3);
 
-    let rng = StdRng::seed_from_u64(hash_key(key));
-
-    let iterpix = pixel::RandomPixelIterator::new((width, height), rng);
+    
+    let iterpix = if options.contains(&&"SEQ".to_string()) {
+        PixelIterator::Sequential(SequentialPixelIterator::new((width,height)))
+    } else {
+        let rng = StdRng::seed_from_u64(hash_key(key));
+        PixelIterator::Random(RandomPixelIterator::new((width, height), rng))
+    };
+    // let iterpix = pixel::RandomPixelIterator::new((width, height), rng);
 
     for (trip, pix) in zip(bit_triplet, iterpix) {
         for (idx, val) in trip.iter().enumerate() {
@@ -65,8 +72,12 @@ pub fn extract(
         println!("Image size: {}x{}", width, height);
     }
 
-    let rng = StdRng::seed_from_u64(hash_key(key));
-    let mut iterpix = pixel::RandomPixelIterator::new((width, height), rng);
+    let mut iterpix = if options.contains(&&"SEQ".to_string()) {
+        PixelIterator::Sequential(SequentialPixelIterator::new((width,height)))
+    } else {
+        let rng = StdRng::seed_from_u64(hash_key(key));
+        PixelIterator::Random(RandomPixelIterator::new((width, height), rng))
+    };
 
     let mut bitstream = (&mut iterpix).flat_map(|px| {
         let img = &img;
