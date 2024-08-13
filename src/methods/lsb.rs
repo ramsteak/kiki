@@ -1,10 +1,9 @@
-use crate::errors::AppError;
+use crate::errors::{AppError, AppErrorKind};
 use rand::{rngs::StdRng, SeedableRng};
 use std::{iter::zip, path::PathBuf};
 
 use crate::methods::data::FromBits;
 use crate::methods::data::{hash_key, package_data, BatchIterator, BitIterator};
-use crate::methods::pixel;
 
 use super::pixel::{PixelIterator, RandomPixelIterator, SequentialPixelIterator};
 
@@ -27,7 +26,10 @@ pub fn embed(
     let message_len = secret_data.len() as u32;
 
     if message_len * 8 > (imgsize * 3) {
-        return Err(AppError::DataOverflow);
+        return Err(AppError::new(
+            crate::errors::AppErrorKind::DataOverflow,
+            "Data is too long",
+        ));
     };
 
     let data = package_data(secret_data);
@@ -99,8 +101,10 @@ pub fn extract(
         let line = line.trim().to_lowercase();
         match line.chars().nth(0) {
             Some('y') => Ok(()),
-            Some(_) => Err(AppError::UserStopped),
-            None => Err(AppError::UserStopped),
+            Some(_) | None => Err(AppError::new(
+                AppErrorKind::UserStopped,
+                "Operation stopped by user",
+            )),
         }?;
     }
 
@@ -122,6 +126,9 @@ pub fn extract(
     if crc_read == crc_calc {
         Ok(secret)
     } else {
-        Err(AppError::CRCMismatch)
+        Err(AppError::new(
+            AppErrorKind::CRCMismatch,
+            "CRC32 mismatch: invalid data",
+        ))
     }
 }

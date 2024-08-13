@@ -1,14 +1,16 @@
 use std::path::PathBuf;
 
 // use crate::methods::{lsb,kiki,jpeg};
-use crate::errors::{AppError, ExtensionError};
+use crate::errors::{AppError, AppErrorKind};
 use crate::methods::lsb;
 
 fn supported_methods(extension: &str) -> Result<Vec<&'static str>, AppError> {
     match extension {
-        "jpg" | "jpeg" | "jfif" | "pjpeg" | "pjp" => Ok(vec!["JPG"]),
-        "bmp" | "png" => Ok(vec!["LSB", "KIKI"]),
-        _ => Err(AppError::Extension(ExtensionError::UnsupportedExtension)),
+        "bmp" | "png" => Ok(vec!["LSB"]),
+        _ => Err(AppError::new(
+            AppErrorKind::UnsupportedExtension,
+            format!("{} is not yet supported.", extension),
+        )),
     }
 }
 
@@ -37,13 +39,21 @@ pub fn embed(
                     if supported.contains(&method.as_str()) {
                         method
                     } else {
-                        return Err(AppError::UnsupportedMethod);
+                        return Err(AppError::new(
+                            AppErrorKind::UnsupportedMethod,
+                            format!("{} is not a supported method.", method),
+                        ));
                     }
                 }
                 None => &supported[0].to_string(),
             }
         }
-        None => return Err(AppError::Extension(ExtensionError::MissingExtension)),
+        None => {
+            return Err(AppError::new(
+                AppErrorKind::MissingExtension,
+                "Specified file is missing the extension.",
+            ))
+        }
     };
     if verbose {
         println!("Determined method: {}", method)
@@ -51,6 +61,9 @@ pub fn embed(
 
     match method.as_str() {
         "LSB" => lsb::embed(image_path, output_path, secret_data, key, verbose, options),
-        _ => Err(AppError::UnsupportedMethod),
+        method => Err(AppError::new(
+            AppErrorKind::UnsupportedMethod,
+            format!("{} is not a supported method.", method),
+        )),
     }
 }

@@ -1,4 +1,3 @@
-use image::{ImageBuffer, Rgba};
 use rand::{rngs::StdRng, Rng};
 use std::collections::HashSet;
 

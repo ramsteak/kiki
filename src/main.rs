@@ -1,5 +1,6 @@
 use clap::{Arg, ArgAction, Command};
 use embed::embed;
+use errors::AppError;
 use extract::extract;
 use std::fs::File;
 use std::io::{self, Read};
@@ -9,41 +10,93 @@ use std::process::exit;
 mod embed;
 mod errors;
 mod extract;
+mod help_text;
 mod methods;
+
+fn get_secret(fd_secret: &String) -> Result<Vec<u8>, AppError> {
+    let mut secret = Vec::<u8>::new();
+
+    match fd_secret.as_str() {
+        "-" => io::stdin().read_to_end(&mut secret)?,
+        _ => File::open(PathBuf::from(fd_secret))?.read_to_end(&mut secret)?,
+    };
+    Ok(secret)
+}
 
 fn main() {
     let cmd = Command::new("kiki")
         .version("0.1.0")
         .about("Steganography tool to embed into and retrieve data from image files.")
         .author("Ramsteak")
-        .subcommand(Command::new("embed")
-            .arg(Arg::new("image").required(true).index(1)
-                    .help("The path to the image to hide the data in."))
-            .arg(Arg::new("output").required(true).index(2)
-                    .help("Path of the output image."))
-            .arg(Arg::new("secret").index(3)
-                    .help("Path to the file containing the secret. If unspecified or \"-\", read from stdin."))
-            .arg(Arg::new("method").short('m').long("method"))
-            .arg(Arg::new("key").short('k').long("key"))
-            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue))
-            .arg(Arg::new("options").short('o').long("options").num_args(1..))
+        .subcommand(
+            Command::new("embed")
+                .arg(
+                    Arg::new("image")
+                        .required(true)
+                        .index(1)
+                        .help(help_text::EMBED_IMAGE),
+                )
+                .arg(
+                    Arg::new("output")
+                        .required(true)
+                        .index(2)
+                        .help(help_text::EMBED_OUTPUT),
+                )
+                .arg(Arg::new("secret").index(3).help(help_text::EMBED_SECRET))
+                .arg(
+                    Arg::new("method")
+                        .short('m')
+                        .long("method")
+                        .help(help_text::METHOD),
+                )
+                .arg(Arg::new("key").short('k').long("key").help(help_text::KEY))
+                .arg(
+                    Arg::new("verbose")
+                        .short('v')
+                        .long("verbose")
+                        .action(ArgAction::SetTrue)
+                        .help(help_text::VERBOSE),
+                )
+                .arg(
+                    Arg::new("options")
+                        .short('o')
+                        .long("options")
+                        .num_args(1..)
+                        .help(help_text::OPTIONS),
+                ),
         )
-        .subcommand(Command::new("extract")
-            .arg(Arg::new("image").required(true).index(1)
-                .help("The path to the image to extract data from."))
-            .arg(Arg::new("output").index(2)
-                .help("The file path to write the data to. If unspecified or \"-\", write to stdout."))
-            .arg(Arg::new("method").short('m').long("method"))
-            .arg(Arg::new("key").short('k').long("key"))
-            .arg(Arg::new("verbose").short('v').long("verbose").action(ArgAction::SetTrue))
-            .arg(Arg::new("options").short('o').long("options").num_args(1..))
+        .subcommand(
+            Command::new("extract")
+                .arg(
+                    Arg::new("image")
+                        .required(true)
+                        .index(1)
+                        .help(help_text::EXTRACT_IMAGE),
+                )
+                .arg(Arg::new("output").index(2).help(help_text::EXTRACT_OUTPUT))
+                .arg(
+                    Arg::new("method")
+                        .short('m')
+                        .long("method")
+                        .help(help_text::METHOD),
+                )
+                .arg(Arg::new("key").short('k').long("key").help(help_text::KEY))
+                .arg(
+                    Arg::new("verbose")
+                        .short('v')
+                        .long("verbose")
+                        .action(ArgAction::SetTrue)
+                        .help(help_text::VERBOSE),
+                )
+                .arg(
+                    Arg::new("options")
+                        .short('o')
+                        .long("options")
+                        .num_args(1..)
+                        .help(help_text::OPTIONS),
+                ),
         )
-        .after_help("\
-Methods list:
-    - LSB      Least significant bit. (lossless only)
-    - JPG      Uses the jpg encoder to embed data. (jpg only)
-    - KIK      Encodes data in 16x16 blocks distributed through the image, with dense LSB. (lossless only)
-                Resists to cropping and rotation")
+        .after_help(help_text::AFTER_HELP)
         .get_matches();
 
     match cmd.subcommand() {
@@ -58,16 +111,12 @@ Methods list:
 
             let fd_secret = sub.get_one::<String>("secret").unwrap();
 
-            let mut secret = Vec::<u8>::new();
-            let secret_size = match sub.get_one::<String>("secret").unwrap().as_str() {
-                "-" => io::stdin()
-                    .read_to_end(&mut secret)
-                    .expect("Failed to read secret from stdin"),
-
-                _ => File::open(PathBuf::from(fd_secret))
-                    .expect("Failed to open secret file")
-                    .read_to_end(&mut secret)
-                    .expect("Failed to read secret from file"),
+            let secret = match get_secret(fd_secret) {
+                Ok(secret) => secret,
+                Err(err) => {
+                    eprintln!("Error in reading secret file {}: {}", fd_secret, err);
+                    exit(-1);
+                }
             };
 
             let options = sub
@@ -79,7 +128,7 @@ Methods list:
                 println!("Kiki embed");
                 println!("Image:        {}", image.to_str().unwrap());
                 println!("Output:       {}", output.to_str().unwrap());
-                println!("Secret:       {} bytes", secret_size);
+                println!("Secret:       {} bytes", secret.len());
                 match method {
                     Some(method) => println!("Method:       {}", method),
                     None => println!("Method will be determined by filetype."),
@@ -91,7 +140,10 @@ Methods list:
                 println!("Options:      {:?}", options);
             }
 
-            embed(&image, &output, &secret, method, key, verbose, options).expect("Error");
+            if let Err(err) = embed(&image, &output, &secret, method, key, verbose, options) {
+                eprintln!("{}", err);
+                exit(-1);
+            }
         }
         Some(("extract", sub)) => {
             let image = PathBuf::from(sub.get_one::<String>("image").unwrap());
@@ -129,7 +181,10 @@ Methods list:
                 println!("Options:      {:?}", options);
             }
             let output_ref = output.as_ref();
-            extract(&image, output_ref, method, key, verbose, options).expect("Error");
+            if let Err(err) = extract(&image, output_ref, method, key, verbose, options) {
+                eprintln!("{}", err);
+                exit(-1);
+            };
         }
         _ => {
             eprintln!("No subcommand used. Specify either 'embed' or 'extract'.");

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 aes = "0.8.4"
 clap = "4.5.14"
+color-print = "0.3.6"
 crc32fast = "1.4.2"
 image = "0.25.2"
 rand = "0.8.5"

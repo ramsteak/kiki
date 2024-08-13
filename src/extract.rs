@@ -1,4 +1,4 @@
-use crate::errors::AppError;
+use crate::errors::{AppError, AppErrorKind};
 use crate::methods::lsb;
 use std::{fs::OpenOptions, io::Write, path::PathBuf};
 
@@ -12,29 +12,32 @@ pub fn extract(
 ) -> Result<(), AppError> {
     let method = match method {
         Some(method) => method,
-        None => return Err(AppError::NotImplemented),
-    };
-
-    let res = match method.as_str() {
-        "LSB" => lsb::extract(image_path, key, verbose, options),
-        _ => return Err(AppError::UnsupportedMethod),
-    };
-
-    match res {
-        Ok(data) => {
-            match output_path {
-                Some(path) => {
-                    let mut file = OpenOptions::new()
-                        .write(true)
-                        .create(true)
-                        .truncate(true)
-                        .open(path)?;
-                    file.write_all(&data)?;
-                }
-                None => println!("{}", String::from_utf8_lossy(&data)),
-            }
-            Ok(())
+        None => {
+            return Err(AppError::new(
+                AppErrorKind::NotImplemented,
+                "Method recognition is not yet implemented",
+            ))
         }
-        Err(e) => Err(e),
+    };
+
+    let data = match method.as_str() {
+        "LSB" => lsb::extract(image_path, key, verbose, options),
+        method => Err(AppError::new(
+            AppErrorKind::UnsupportedMethod,
+            format!("{} is not a supported method.", method),
+        )),
+    }?;
+
+    match output_path {
+        Some(path) => {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)?;
+            file.write_all(&data)?;
+        }
+        None => println!("{}", String::from_utf8_lossy(&data)),
     }
+    Ok(())
 }

@@ -2,16 +2,17 @@ use image;
 use std::{fmt, io};
 
 #[derive(Debug)]
-pub enum ExtensionError {
-    UnsupportedExtension,
-    MissingExtension,
+pub struct AppError {
+    _kind: AppErrorKind,
+    message: String,
 }
 
 #[derive(Debug)]
-pub enum AppError {
-    Io(io::Error),
-    Image(image::ImageError),
-    Extension(ExtensionError),
+pub enum AppErrorKind {
+    Io,
+    Image,
+    MissingExtension,
+    UnsupportedExtension,
     DataOverflow,
     UnsupportedMethod,
     NotImplemented,
@@ -19,20 +20,30 @@ pub enum AppError {
     UserStopped,
 }
 
+impl AppError {
+    pub fn new(kind: AppErrorKind, message: impl Into<String>) -> Self {
+        AppError {
+            _kind: kind,
+            message: message.into(),
+        }
+    }
+}
+
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{}", self.message)
     }
 }
 
 impl From<io::Error> for AppError {
     fn from(error: io::Error) -> Self {
-        AppError::Io(error)
+        let message = error.kind().to_string();
+        AppError::new(AppErrorKind::Io, message)
     }
 }
 
 impl From<image::ImageError> for AppError {
     fn from(error: image::ImageError) -> Self {
-        AppError::Image(error)
+        AppError::new(AppErrorKind::Image, format!("{}", error))
     }
 }
